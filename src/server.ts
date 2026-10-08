@@ -7,7 +7,9 @@ import handler from '@tanstack/react-start/server-entry'
 import { traiterLotNotifications, type MessageQueueNotification } from './server/notifications/notifications'
 
 export default {
-  fetch: handler.fetch,
+  // Le 2e argument de handler.fetch est une option TanStack, pas l'env Cloudflare :
+  // on ne transmet que la requête (les bindings sont lus via `cloudflare:workers`).
+  fetch: (requete) => handler.fetch(requete),
 
   async queue(lot) {
     await traiterLotNotifications(lot as MessageBatch<MessageQueueNotification>)
