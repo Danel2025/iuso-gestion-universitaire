@@ -1,200 +1,96 @@
-Welcome to your new TanStack Start app!
+# Plateforme IUSO-SNE
 
-# Getting Started
+Plateforme web de gestion académique et administrative de l'Institut Universitaire des Sciences de l'Organisation Sophie Ntoutoume Emane : concours d'entrée, inscriptions, scolarité, évaluations, soutenances et diplômes.
 
-To run this application:
+## Stack
 
-```bash
+| Brique | Choix |
+|---|---|
+| Application | [TanStack Start](https://tanstack.com/start) (React, rendu serveur, server functions) |
+| Exécution | Cloudflare Workers (plan Workers Paid requis) |
+| Base de données | PostgreSQL managé, accédé via Hyperdrive avec `pg` et Drizzle ORM |
+| Authentification | [Better Auth](https://www.better-auth.com) (e-mail + mot de passe, sessions en base) |
+| Fichiers | Cloudflare R2, juridiction `eu`, jamais public |
+| Envois différés | Cloudflare Queues (e-mails, SMS), Cron Triggers |
+
+## Organisation du code
+
+```
+src/
+  server.ts                 Point d'entrée du Worker : HTTP, Queue, Cron
+  routes/                   Pages et routes API (routage par fichiers)
+    api/auth/$.ts           Endpoints Better Auth
+    api/fichiers/$id.ts     Téléchargement d'un fichier après contrôle des droits
+    espace/                 Espace connecté (tableau de bord, référentiels, utilisateurs, journal)
+  lib/                      Code partagé client/serveur, sans dépendance serveur
+    droits.ts               Matrice rôles → permissions (FR013)
+    fichiers.ts             Règles de dépôt (types, taille, signature binaire)
+  server/                   Code exécuté uniquement côté serveur
+    db/                     Schéma Drizzle et connexion par requête
+    auth/                   Configuration Better Auth et middlewares d'accès
+    fonctions/              Server functions appelées par les pages
+    fournisseurs/           Interfaces e-mail, SMS, paiement et implémentations
+    notifications/          Notifications et consommateur de la Queue
+    fichiers/               Stockage R2
+    audit.ts                Journal d'audit
+drizzle/                    Migrations SQL versionnées
+scripts/creer-admin.ts      Création du premier administrateur
+```
+
+## Règles de sécurité appliquées
+
+- **Chaque server function vérifie elle-même la session et la permission** via `exigerPermission(...)` (`src/server/auth/middleware.ts`). Les redirections dans `beforeLoad` et le masquage des menus ne servent qu'à l'ergonomie.
+- Les opérations sensibles s'exécutent dans une transaction qui écrit aussi une entrée du **journal d'audit**. Ce journal est inaltérable : un trigger PostgreSQL refuse `UPDATE`, `DELETE` et `TRUNCATE`.
+- Les fichiers déposés sont contrôlés sur leur contenu réel (signature binaire), pas sur leur extension, et servis avec `cache-control: private, no-store`.
+- Connexion limitée à 5 tentatives par minute ; compteurs stockés en base (la mémoire d'un Worker n'est pas partagée).
+- Aucun secret dans le dépôt : `.env` et `.dev.vars` sont ignorés par Git.
+
+## Démarrage en local
+
+Prérequis : Node.js 22 et un PostgreSQL local (16 ou plus).
+
+```sh
 npm install
-npm run dev
+cp .env.example .env            # chaîne de connexion de la base locale
+cp .dev.vars.example .dev.vars  # puis renseigner BETTER_AUTH_SECRET (openssl rand -base64 32)
+
+# Base locale (adapter à votre installation)
+createuser iuso --pwprompt       # mot de passe : iuso, ou adapter .env
+createdb iuso_dev --owner iuso
+
+npm run db:migrate
+ADMIN_MOT_DE_PASSE='un-mot-de-passe-solide' npm run admin:creer -- admin@iuso-sne.ga "Nom de l'administrateur"
+npm run dev                      # http://localhost:3000
 ```
 
-# Building For Production
+En local, R2 et les Queues sont simulés par Wrangler ; les e-mails et SMS sont écrits dans les logs au lieu d'être envoyés.
 
-To build this application for production:
+## Commandes
 
-```bash
-npm run build
-```
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm test` | Tests unitaires (Vitest) |
+| `npm run db:generate` | Générer une migration après modification du schéma |
+| `npm run db:migrate` | Appliquer les migrations sur `DATABASE_URL` |
+| `npm run admin:creer` | Créer un compte administrateur |
+| `npm run cf-typegen` | Régénérer les types des bindings après modification de `wrangler.jsonc` |
+| `npm run deploy` | Construire et déployer (voir ci-dessous) |
 
-## Styling
+## Mise en place Cloudflare (recette et production)
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+À faire une fois par environnement (`recette`, `production`) :
 
-### Removing Tailwind CSS
+1. Créer la base PostgreSQL managée en région UE et appliquer les migrations (`DATABASE_URL=… npm run db:migrate`).
+2. Créer la configuration Hyperdrive, puis reporter son identifiant dans `wrangler.jsonc` :
+   `npx wrangler hyperdrive create iuso-recette --connection-string="postgres://…"`
+3. Créer le bucket R2 en juridiction UE : `npx wrangler r2 bucket create iuso-fichiers-recette --jurisdiction eu`
+4. Créer la Queue : `npx wrangler queues create iuso-notifications-recette`
+5. Enregistrer le secret : `npx wrangler secret put BETTER_AUTH_SECRET --env recette`
+6. Déployer : `CLOUDFLARE_ENV=recette npm run deploy`
 
-If you prefer not to use Tailwind CSS:
+Les domaines `*.iuso-sne.example` de `wrangler.jsonc` sont provisoires.
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
+## Suivi du projet
 
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+Le plan d'avancement (lots L0 à L11, jalons, décisions) est tenu dans le projet Claude « Logiciel De Gestion Administrative Universitaire ». Ce dépôt correspond au lot **L2 Socle technique**.
