@@ -1,7 +1,7 @@
 /**
  * Crée le premier compte administrateur, directement en base.
  *
- *   ADMIN_MOT_DE_PASSE='…' npm run admin:creer -- admin@iuso-sne.ga "Nom Prénom"
+ *   ADMIN_MOT_DE_PASSE='…' pnpm run admin:creer admin@iuso-sne.ga "Nom Prénom"
  *
  * Le mot de passe passe par une variable d'environnement pour ne pas rester
  * dans l'historique du shell avec les arguments.
@@ -11,12 +11,13 @@ import { Client } from 'pg'
 import * as schema from '../src/server/db/schema'
 import { creerCompte } from '../src/server/utilisateurs/comptes'
 
-const [email, nom] = process.argv.slice(2)
+// pnpm transmet un « -- » éventuel au script : on l'ignore.
+const [email, nom] = process.argv.slice(2).filter((arg) => arg !== '--')
 const motDePasse = process.env.ADMIN_MOT_DE_PASSE
 const url = process.env.DATABASE_URL
 
 if (!email || !nom || !motDePasse || !url) {
-  console.error('Usage : ADMIN_MOT_DE_PASSE=… DATABASE_URL=… npm run admin:creer -- <email> "<nom>"')
+  console.error('Usage : ADMIN_MOT_DE_PASSE=… DATABASE_URL=… pnpm run admin:creer <email> "<nom>"')
   process.exit(1)
 }
 if (motDePasse.length < 10) {

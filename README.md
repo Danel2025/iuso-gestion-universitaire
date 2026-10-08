@@ -47,10 +47,10 @@ scripts/creer-admin.ts      Création du premier administrateur
 
 ## Démarrage en local
 
-Prérequis : Node.js 22 et un PostgreSQL local (16 ou plus).
+Prérequis : Node.js 22, pnpm 12 (`corepack enable` suffit) et un PostgreSQL local (16 ou plus).
 
 ```sh
-npm install
+pnpm install                      # Corepack ou pnpm 12 (version fixée par packageManager)
 cp .env.example .env            # chaîne de connexion de la base locale
 cp .dev.vars.example .dev.vars  # puis renseigner BETTER_AUTH_SECRET (openssl rand -base64 32)
 
@@ -58,9 +58,9 @@ cp .dev.vars.example .dev.vars  # puis renseigner BETTER_AUTH_SECRET (openssl ra
 createuser iuso --pwprompt       # mot de passe : iuso, ou adapter .env
 createdb iuso_dev --owner iuso
 
-npm run db:migrate
-ADMIN_MOT_DE_PASSE='un-mot-de-passe-solide' npm run admin:creer -- admin@iuso-sne.ga "Nom de l'administrateur"
-npm run dev                      # http://localhost:3000
+pnpm run db:migrate
+ADMIN_MOT_DE_PASSE='un-mot-de-passe-solide' pnpm run admin:creer admin@iuso-sne.ga "Nom de l'administrateur"
+pnpm run dev                      # http://localhost:3000
 ```
 
 En local, R2 et les Queues sont simulés par Wrangler ; les e-mails et SMS sont écrits dans les logs au lieu d'être envoyés.
@@ -69,25 +69,25 @@ En local, R2 et les Queues sont simulés par Wrangler ; les e-mails et SMS sont 
 
 | Commande | Rôle |
 |---|---|
-| `npm run dev` | Serveur de développement |
-| `npm test` | Tests unitaires (Vitest) |
-| `npm run db:generate` | Générer une migration après modification du schéma |
-| `npm run db:migrate` | Appliquer les migrations sur `DATABASE_URL` |
-| `npm run admin:creer` | Créer un compte administrateur |
-| `npm run cf-typegen` | Régénérer les types des bindings après modification de `wrangler.jsonc` |
-| `npm run deploy` | Construire et déployer (voir ci-dessous) |
+| `pnpm run dev` | Serveur de développement |
+| `pnpm test` | Tests unitaires (Vitest) |
+| `pnpm run db:generate` | Générer une migration après modification du schéma |
+| `pnpm run db:migrate` | Appliquer les migrations sur `DATABASE_URL` |
+| `pnpm run admin:creer` | Créer un compte administrateur |
+| `pnpm run cf-typegen` | Régénérer les types des bindings après modification de `wrangler.jsonc` |
+| `pnpm run deploy` | Construire et déployer (voir ci-dessous) |
 
 ## Mise en place Cloudflare (recette et production)
 
 À faire une fois par environnement (`recette`, `production`) :
 
-1. Créer la base PostgreSQL managée en région UE et appliquer les migrations (`DATABASE_URL=… npm run db:migrate`).
+1. Créer la base PostgreSQL managée en région UE et appliquer les migrations (`DATABASE_URL=… pnpm run db:migrate`).
 2. Créer la configuration Hyperdrive, puis reporter son identifiant dans `wrangler.jsonc` :
    `npx wrangler hyperdrive create iuso-recette --connection-string="postgres://…"`
 3. Créer le bucket R2 en juridiction UE : `npx wrangler r2 bucket create iuso-fichiers-recette --jurisdiction eu`
 4. Créer la Queue : `npx wrangler queues create iuso-notifications-recette`
 5. Enregistrer le secret : `npx wrangler secret put BETTER_AUTH_SECRET --env recette`
-6. Déployer : `CLOUDFLARE_ENV=recette npm run deploy`
+6. Déployer : `CLOUDFLARE_ENV=recette pnpm run deploy`
 
 Les domaines `*.iuso-sne.example` de `wrangler.jsonc` sont provisoires.
 

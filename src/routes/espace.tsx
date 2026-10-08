@@ -1,4 +1,4 @@
-import { Link, Outlet, createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { aPermission, LIBELLES_ROLES, type Permission } from '#/lib/droits'
 import { clientAuth } from '#/lib/client-auth'
 import { obtenirUtilisateurCourant } from '#/server/fonctions/session'
@@ -29,12 +29,11 @@ const MENU: {
 
 function Espace() {
   const { utilisateur } = Route.useRouteContext()
-  const router = useRouter()
-
   async function seDeconnecter() {
     await clientAuth.signOut()
-    await router.invalidate()
-    await router.navigate({ to: '/connexion' })
+    // Rechargement complet : aucune donnée de la session précédente ne reste en
+    // mémoire, et la sortie fonctionne même depuis une page en erreur.
+    window.location.assign('/connexion')
   }
 
   return (
