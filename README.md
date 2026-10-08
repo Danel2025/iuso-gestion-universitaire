@@ -83,10 +83,10 @@ En local, R2 et les Queues sont simulés par Wrangler ; les e-mails et SMS sont 
 
 1. Créer la base PostgreSQL managée en région UE et appliquer les migrations (`DATABASE_URL=… pnpm run db:migrate`).
 2. Créer la configuration Hyperdrive, puis reporter son identifiant dans `wrangler.jsonc` :
-   `npx wrangler hyperdrive create iuso-recette --connection-string="postgres://…"`
-3. Créer le bucket R2 en juridiction UE : `npx wrangler r2 bucket create iuso-fichiers-recette --jurisdiction eu`
-4. Créer la Queue : `npx wrangler queues create iuso-notifications-recette`
-5. Enregistrer le secret : `npx wrangler secret put BETTER_AUTH_SECRET --env recette`
+   `pnpm exec wrangler hyperdrive create iuso-recette --connection-string="postgres://…"`
+3. Créer le bucket R2 en juridiction UE : `pnpm exec wrangler r2 bucket create iuso-fichiers-recette --jurisdiction eu`
+4. Créer la Queue : `pnpm exec wrangler queues create iuso-notifications-recette`
+5. Enregistrer le secret : `pnpm exec wrangler secret put BETTER_AUTH_SECRET --env recette`
 6. Déployer : `CLOUDFLARE_ENV=recette pnpm run deploy`
 
 Les domaines `*.iuso-sne.example` de `wrangler.jsonc` sont provisoires.

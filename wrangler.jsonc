@@ -5,7 +5,7 @@
  * Trois environnements : développement local (racine de ce fichier),
  * `recette` et `production`. Les bindings ne s'héritent pas entre
  * environnements Wrangler : chaque environnement les redéclare.
- * Choix de l'environnement au build : CLOUDFLARE_ENV=recette npm run build
+ * Choix de l'environnement au build : CLOUDFLARE_ENV=recette pnpm run build
  *
  * Les identifiants `<...>` sont à remplacer après création des ressources
  * (voir README, section « Mise en place Cloudflare »).
