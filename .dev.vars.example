@@ -1,0 +1,4 @@
+# Secrets du Worker en développement local : copier vers .dev.vars (jamais commité).
+# En recette et production : pnpm exec wrangler secret put BETTER_AUTH_SECRET --env <recette|production>
+# Générer une valeur : openssl rand -base64 32
+BETTER_AUTH_SECRET=

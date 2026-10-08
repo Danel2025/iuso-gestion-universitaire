@@ -1,0 +1,8 @@
+# Configuration pnpm (https://pnpm.io/settings).
+# Dépendances autorisées à exécuter leurs scripts d'installation
+# (binaires natifs d'esbuild, lightningcss, sharp et du runtime workerd).
+allowBuilds:
+  esbuild: true
+  lightningcss: true
+  sharp: true
+  workerd: true
