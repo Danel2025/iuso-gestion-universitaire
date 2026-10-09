@@ -26,7 +26,10 @@
 	// En local, la chaîne de connexion vient de la variable d'environnement
 	// CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE (voir .env.example).
 	"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-dev-id>" }],
-	"r2_buckets": [{ "binding": "FICHIERS", "bucket_name": "iuso-fichiers-dev", "jurisdiction": "eu" }],
+	"r2_buckets": [
+		{ "binding": "FICHIERS", "bucket_name": "iuso-fichiers-dev", "jurisdiction": "eu" },
+		{ "binding": "SAUVEGARDE_FICHIERS", "bucket_name": "iuso-sauvegardes-fichiers-dev", "jurisdiction": "eu" }
+	],
 	"queues": {
 		"producers": [{ "binding": "NOTIFICATIONS", "queue": "iuso-notifications-dev" }],
 		"consumers": [{ "queue": "iuso-notifications-dev", "max_batch_size": 10, "max_retries": 5 }]
@@ -39,7 +42,10 @@
 				"APP_URL": "https://recette.iuso-sne.example"
 			},
 			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-recette-id>" }],
-			"r2_buckets": [{ "binding": "FICHIERS", "bucket_name": "iuso-fichiers-recette", "jurisdiction": "eu" }],
+			"r2_buckets": [
+				{ "binding": "FICHIERS", "bucket_name": "iuso-fichiers-recette", "jurisdiction": "eu" },
+				{ "binding": "SAUVEGARDE_FICHIERS", "bucket_name": "iuso-sauvegardes-fichiers-recette", "jurisdiction": "eu" }
+			],
 			"queues": {
 				"producers": [{ "binding": "NOTIFICATIONS", "queue": "iuso-notifications-recette" }],
 				"consumers": [{ "queue": "iuso-notifications-recette", "max_batch_size": 10, "max_retries": 5 }]
@@ -53,7 +59,10 @@
 				"APP_URL": "https://plateforme.iuso-sne.example"
 			},
 			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-production-id>" }],
-			"r2_buckets": [{ "binding": "FICHIERS", "bucket_name": "iuso-fichiers-production", "jurisdiction": "eu" }],
+			"r2_buckets": [
+				{ "binding": "FICHIERS", "bucket_name": "iuso-fichiers-production", "jurisdiction": "eu" },
+				{ "binding": "SAUVEGARDE_FICHIERS", "bucket_name": "iuso-sauvegardes-fichiers-production", "jurisdiction": "eu" }
+			],
 			"queues": {
 				"producers": [{ "binding": "NOTIFICATIONS", "queue": "iuso-notifications-production" }],
 				"consumers": [{ "queue": "iuso-notifications-production", "max_batch_size": 10, "max_retries": 5 }]

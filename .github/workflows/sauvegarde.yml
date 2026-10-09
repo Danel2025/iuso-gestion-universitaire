@@ -1,0 +1,47 @@
+name: Sauvegarde de la base
+
+# Chaque nuit, sauvegarde chiffrée de la base de production vers R2 (juridiction eu).
+# Déclenchement manuel possible pour la recette. Secrets par environnement GitHub :
+#   DATABASE_URL, SAUVEGARDE_PASSPHRASE, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      environnement:
+        description: Environnement à sauvegarder
+        type: choice
+        options: [production, recette]
+        default: production
+
+permissions:
+  contents: read
+
+jobs:
+  sauvegarder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environnement || 'production' }}
+    env:
+      # Version majeure du client pg_dump : au moins celle du serveur PostgreSQL managé.
+      PG_VERSION: '17'
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SAUVEGARDE_PASSPHRASE: ${{ secrets.SAUVEGARDE_PASSPHRASE }}
+      SAUVEGARDE_BUCKET: iuso-sauvegardes-db-${{ inputs.environnement || 'production' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Client PostgreSQL
+        run: |
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y "postgresql-client-${PG_VERSION}"
+          echo "/usr/lib/postgresql/${PG_VERSION}/bin" >> "$GITHUB_PATH"
+      - name: Sauvegarde
+        run: bash scripts/sauvegarde-db.sh

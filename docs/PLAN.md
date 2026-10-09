@@ -132,3 +132,4 @@ Ordre justifié : le concours alimente les inscriptions, les inscriptions alimen
 | 2026-10-08 | D7 : Déreck considère l'hébergement hors Gabon couvert par les autorisations du client ; consentement explicite ajouté aux formulaires (L3, L4). |
 | 2026-10-08 | L2 démarré : dépôt Danel2025/iuso-gestion-universitaire, PR #1 en brouillon (auth Better Auth, rôles, référentiels, journal d'audit inaltérable, R2, Queue). Parcours testé en local. |
 | 2026-10-08 | PR #1 fusionnée dans main après type-check et build réussis ; passage à pnpm 12. Déploiement Cloudflare en attente des ressources (base UE, Hyperdrive, R2, Queue) et d'un accès Cloudflare. |
+| 2026-10-09 | L2 : sauvegardes ajoutées (base chiffrée vers R2 chaque nuit, copie incrémentale des fichiers R2 par le cron du Worker, script de restauration). Non testé sur de vrais services : pg_dump et R2 absents en local ; essai de restauration à faire en recette. |
