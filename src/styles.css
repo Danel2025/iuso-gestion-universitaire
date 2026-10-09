@@ -1,13 +1,60 @@
 @import "tailwindcss";
+/* Variantes courtes pour les états React Aria : pressed:, selected:, focus-visible:… */
+@plugin "tailwindcss-react-aria-components";
+@import "@fontsource-variable/libre-franklin";
 
 /*
  * Charte provisoire de la plateforme IUSO-SNE, à remplacer par la charte
  * graphique de l'institut lors de la conception (L1).
- * Polices système uniquement : aucune police téléchargée, pour rester léger
- * sur les connexions lentes (CDC §8).
+ * Palette neutre (gamme neutral de Tailwind) : seuls danger et succès gardent
+ * une teinte, pour rester lisibles comme signaux.
+ * Polices auto-hébergées, avec repli immédiat sur la police système
+ * (font-display: swap) pour les connexions lentes (CDC §8) :
+ * - texte : Libre Franklin, police variable, sous-ensemble latin (~29 Ko,
+ *   toutes graisses, couvre le français), préchargé dans __root.tsx ;
+ * - chiffres : Barlow (type DIN), réduit aux seuls chiffres 0-9 (~4 Ko par
+ *   graisse) par scripts/generer-chiffres.py. Grâce à unicode-range, tout
+ *   chiffre de l'interface prend cette police sans classe à ajouter.
  */
+@font-face {
+  font-family: "Chiffres IUSO";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/polices/chiffres-barlow-400.woff2") format("woff2");
+  unicode-range: U+0030-0039;
+  size-adjust: 106%;
+}
+@font-face {
+  font-family: "Chiffres IUSO";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./assets/polices/chiffres-barlow-500.woff2") format("woff2");
+  unicode-range: U+0030-0039;
+  size-adjust: 106%;
+}
+@font-face {
+  font-family: "Chiffres IUSO";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./assets/polices/chiffres-barlow-600.woff2") format("woff2");
+  unicode-range: U+0030-0039;
+  size-adjust: 106%;
+}
+@font-face {
+  font-family: "Chiffres IUSO";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/polices/chiffres-barlow-700.woff2") format("woff2");
+  unicode-range: U+0030-0039;
+  size-adjust: 106%;
+}
+
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Chiffres IUSO", "Libre Franklin Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --color-encre: var(--encre);
   --color-encre-douce: var(--encre-douce);
   --color-fond: var(--fond);
@@ -15,18 +62,29 @@
   --color-ligne: var(--ligne);
   --color-accent: var(--accent);
   --color-accent-fort: var(--accent-fort);
+  --color-sur-accent: var(--sur-accent);
   --color-danger: var(--danger);
   --color-succes: var(--succes);
+
+  /*
+   * Arrondis faibles, registre « document administratif ». Deux niveaux :
+   * contrôles (boutons, champs, étiquettes de statut) et conteneurs (cartes,
+   * menus, fenêtres). Données et aperçus de documents officiels : 0. Un
+   * élément imbriqué prend toujours un rayon inférieur à son conteneur.
+   */
+  --radius-controle: 4px;
+  --radius-conteneur: 6px;
 }
 
 :root {
-  --encre: #13233a;
-  --encre-douce: #4a5a70;
-  --fond: #f4f6f9;
+  --encre: #171717;
+  --encre-douce: #525252;
+  --fond: #f5f5f5;
   --surface: #ffffff;
-  --ligne: #d9dfe7;
-  --accent: #1d5fa8;
-  --accent-fort: #164a83;
+  --ligne: #d4d4d4;
+  --accent: #171717;
+  --accent-fort: #404040;
+  --sur-accent: #ffffff;
   --danger: #b42318;
   --succes: #1f7a4d;
   color-scheme: light;
@@ -34,13 +92,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --encre: #e6edf5;
-    --encre-douce: #a9b6c6;
-    --fond: #0f1722;
-    --surface: #172231;
-    --ligne: #2a3a4f;
-    --accent: #6aa8ec;
-    --accent-fort: #8dbdf2;
+    --encre: #f5f5f5;
+    --encre-douce: #a3a3a3;
+    --fond: #0a0a0a;
+    --surface: #171717;
+    --ligne: #404040;
+    --accent: #f5f5f5;
+    --accent-fort: #d4d4d4;
+    --sur-accent: #171717;
     --danger: #f2877d;
     --succes: #6fcf9c;
     color-scheme: dark;
@@ -53,16 +112,16 @@ body {
 
 @layer components {
   .carte {
-    @apply rounded-lg border border-ligne bg-surface p-4 sm:p-6;
+    @apply rounded-conteneur border border-ligne bg-surface p-4 sm:p-6;
   }
   .bouton {
-    @apply inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-fort focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-controle bg-accent px-4 py-2 text-sm font-semibold text-sur-accent transition-colors hover:bg-accent-fort focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60;
   }
   .bouton-secondaire {
-    @apply inline-flex items-center justify-center gap-2 rounded-md border border-ligne bg-surface px-4 py-2 text-sm font-semibold text-encre transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-controle border border-ligne bg-surface px-4 py-2 text-sm font-semibold text-encre transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60;
   }
   .champ {
-    @apply w-full rounded-md border border-ligne bg-surface px-3 py-2 text-sm text-encre placeholder:text-encre-douce focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30;
+    @apply w-full rounded-controle border border-ligne bg-surface px-3 py-2 text-sm text-encre placeholder:text-encre-douce focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30;
   }
   .etiquette {
     @apply mb-1 block text-sm font-medium text-encre;
@@ -74,9 +133,9 @@ body {
     @apply border-b border-ligne px-3 py-2 font-semibold text-encre-douce;
   }
   .tableau td {
-    @apply border-b border-ligne px-3 py-2 align-top;
+    @apply border-b border-ligne px-3 py-2 align-top tabular-nums;
   }
   .alerte-erreur {
-    @apply rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger;
+    @apply rounded-controle border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger;
   }
 }

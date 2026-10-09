@@ -18,6 +18,7 @@
     "admin:creer": "tsx --env-file=.env scripts/creer-admin.ts"
   },
   "dependencies": {
+    "@fontsource-variable/libre-franklin": "^5.3.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "0.10.13",
     "@tanstack/react-router": "1.170.41",
@@ -27,12 +28,15 @@
     "drizzle-orm": "0.45.3",
     "pg": "^8.23.1",
     "react": "^19.2.0",
+    "react-aria-components": "^1.22.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.1.18",
+    "tailwindcss-react-aria-components": "^2.2.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
+    "@fontsource/barlow": "^5.3.0",
     "@tanstack/devtools-vite": "0.8.5",
     "@tanstack/router-cli": "^1.132.0",
     "@types/node": "^22.20.5",
