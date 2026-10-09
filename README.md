@@ -91,6 +91,35 @@ En local, R2 et les Queues sont simulés par Wrangler ; les e-mails et SMS sont 
 
 Les domaines `*.iuso-sne.example` de `wrangler.jsonc` sont provisoires.
 
+## Sauvegardes
+
+| Donnée | Mécanisme | Destination | Fréquence |
+|---|---|---|---|
+| Base PostgreSQL | `scripts/sauvegarde-db.sh`, lancé par le workflow `sauvegarde.yml` : `pg_dump`, contrôle de l'archive, chiffrement GPG (AES-256) | bucket R2 `iuso-sauvegardes-db-<env>` (juridiction `eu`) | chaque nuit à 02 h 30 UTC |
+| Fichiers (justificatifs, PV, attestations) | Cron du Worker : copie des objets absents de la sauvegarde (`src/server/sauvegardes/fichiers.ts`, jusqu'à 500 par passage) | bucket R2 `iuso-sauvegardes-fichiers-<env>` (juridiction `eu`) | chaque jour à 06 h 00 UTC |
+
+À faire une fois par environnement, en plus de la mise en place Cloudflare :
+
+1. Créer les buckets de sauvegarde :
+   `pnpm exec wrangler r2 bucket create iuso-sauvegardes-db-production --jurisdiction eu` et
+   `pnpm exec wrangler r2 bucket create iuso-sauvegardes-fichiers-production --jurisdiction eu`
+2. Fixer la durée de conservation des archives de base (35 jours proposés, à valider avec le registre des traitements) :
+   `pnpm exec wrangler r2 bucket lifecycle add iuso-sauvegardes-db-production expiration-35j --expire-days 35 --jurisdiction eu`
+   Le bucket des fichiers n'expire pas : les suppressions ne sont pas répercutées dans la sauvegarde.
+3. Renseigner les secrets de l'environnement GitHub : `DATABASE_URL`, `SAUVEGARDE_PASSPHRASE`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
+   La phrase `SAUVEGARDE_PASSPHRASE` doit aussi être conservée hors de GitHub et de Cloudflare (coffre de mots de passe de l'IUSO) : sans elle, les archives sont illisibles.
+4. Le jeton Cloudflare de sauvegarde ne doit avoir que l'écriture sur R2.
+
+**Restaurer** dans une base vide :
+
+```sh
+CIBLE_DATABASE_URL='postgres://…' SAUVEGARDE_PASSPHRASE='…'   bash scripts/restaurer-db.sh iuso-sauvegardes-db-production db/iuso-20261009T023000Z.dump.gpg
+```
+
+Une sauvegarde jamais restaurée n'est pas une sauvegarde : faire un essai de restauration dans une base de recette après la mise en place, puis à chaque trimestre.
+
+Sauvegardes de l'hébergeur : activer aussi la sauvegarde automatique et la restauration à un instant donné (PITR) du PostgreSQL managé ; elles complètent ces copies et ne les remplacent pas.
+
 ## Suivi du projet
 
 Le plan d'avancement (lots L0 à L11, jalons, décisions) est tenu dans le projet Claude « Logiciel De Gestion Administrative Universitaire ». Ce dépôt correspond au lot **L2 Socle technique**.
